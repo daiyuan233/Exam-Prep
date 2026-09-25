@@ -1,0 +1,321 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>根据组成，选方剂和主治</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --success-color: #27ae60;
+            --error-color: #e74c3c;
+            --bg-color: #f4f7f6;
+            --accent-color: #9b59b6;
+        }
+
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        。container {
+            max-width: 600px;
+            width: 90%;
+            background: white;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .modes {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .mode-btn {
+            background-color: #ecf0f1;
+            color: var(--primary-color);
+            flex: 1;
+        }
+
+        .mode-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .question-text {
+            font-size: 3em;
+            line-height: 1.6;
+            color: #34495e;
+            padding: 20px;
+            background: #fdfdfd;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            min-height: 80px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .options {
+            display: grid;
+            gap: 12px;
+        }
+
+        .option-btn {
+            background-color: white;
+            border: 2px solid #edf2f7;
+            text-align: left;
+            padding: 14px 20px;
+            font-size: 16px;
+            border-radius: 8px;
+        }
+
+        .option-btn:hover:not(.disabled) {
+            border-color: var(--primary-color);
+            background-color: #f7fafc;
+        }
+
+        .option-btn.correct {
+            background-color: var(--success-color) !important;
+            color: white;
+            border-color: var(--success-color);
+        }
+
+        .option-btn.wrong {
+            background-color: var(--error-color) !important;
+            color: white;
+            border-color: var(--error-color);
+        }
+
+        .option-btn.disabled {
+            cursor: default;
+        }
+
+        .nav-btns {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 25px;
+            gap: 10px;
+        }
+
+        .nav-btn {
+            background-color: #3498db;
+            color: white;
+            flex: 1;
+        }
+
+        .nav-btn:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        .action-btns {
+            margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .refresh-btn { background-color: var(--accent-color); color: white; }
+        .all-btn { background-color: #7f8c8d; color: white; }
+
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px dashed #ddd;
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+
+        .accuracy-highlight {
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- 模式切换 -->
+        <div class="modes">
+            <button class="mode-btn active" onclick="changeMode('category')">分類</button>
+            <button class="mode-btn" onclick="changeMode('composition')">組成</button>
+            <button class="mode-btn" onclick="changeMode('indications')">主治</button>
+        </div>
+
+        <!-- 题目区域 -->
+        <div id="quiz-area">
+            <div class="question-text" id="question-content">正在初始化...</div>
+            <div class="options" id="options-container"></div>
+        </div>
+
+        <!-- 导航 -->
+        <div class="nav-btns">
+            <button class="nav-btn" id="prev-btn" onclick="prevQuestion()">前の問題</button>
+            <button class="nav-btn" id="next-btn" onclick="nextQuestion()">次の問題</button>
+        </div>
+
+        <!-- 功能按钮 -->
+        <div class="action-btns">
+            <button class="refresh-btn" onclick="initQuiz(10)">ランダムに10問出題</button>
+            <button class="all-btn" onclick="initQuiz(rawData.length)">全方剤テスト (全10問)</button>
+        </div>
+
+        <!-- 统计 -->
+        <div class="stats-bar">
+            <span id="progress-text">进度: 1 / 10</span>
+            <span>正确率: <span id="accuracy-val" class="accuracy-highlight">0%</span></span>
+        </div>
+    </div>
+
+<script>
+    const rawData = [
+    { name: "麻黄湯", category: "解表剤 / 辛温解表剤", composition: "麻黄10g 桂枝6g 杏仁10g 甘草6g", indications: "外感風寒（表実証），肺気不宣" },
+    { name: "小柴胡湯", category: "和解剤 / 和解少陽剤", composition: "柴胡15g 黄芩9g 人参6g 半夏9g 甘草6g 生姜9g 大棗4g", indications: "少陽半表半裏証" },
+    { name: "半夏瀉心湯", category: "和解剤 / 調和上下剤（調和腸胃剤）", composition: "半夏9g 黄芩6g 乾姜6g 人参6g 甘草6g 黄連3g 大棗4g", indications: "心下痞鞭" },
+    { name: "黄連解毒湯", category: "清熱剤 / 清熱解毒剤", composition: "黄連3～9g 黄芩6g 黄柏6g 山梔子9g", indications: "熱毒壅盛三焦" },
+    { name: "四君子湯", category: "補益剤 / 補気剤", composition: "人参6g 白朮9g 茯苓9g 炙甘草6g", indications: "脾気虚" },
+    { name: "四物湯", category: "補益剤 / 補血剤", composition: "当帰9g 川芎6g 白芍12g 熟地黄12g", indications: "肝血不足" },
+    { name: "十全大補湯", category: "補益剤 / 気血双補剤", composition: "人参8g 肉桂8g 川芎5g 熟地黄15g 茯苓8g 白朮10g 炙甘草5g 黄耆15g 当帰10g 白芍8g", indications: "気血両虚" },
+    { name: "八味地黄丸", category: "補益剤 / 補陽剤", composition: "熟地黄24g 山薬12g 山茱萸12g 沢瀉9g 茯苓9g 牡丹皮9g 桂枝3g 炮附子3g", indications: "腎陽虚" },
+    { name: "桂枝茯苓丸", category: "理血剤 / 活血祛瘀剤", composition: "桂枝9g 茯苓9g 牡丹皮9g 桃仁9g 赤芍9g", indications: "血瘀" },
+    { name: "平胃散", category: "祛湿剤 / 燥湿和胃剤", composition: "蒼朮15g 厚朴9g 陳皮9g 甘草4g", indications: "湿困脾胃" }
+];
+
+    let currentQuestions = [];
+    let currentIndex = 0;
+    let currentMode = 'category';
+    let userAnswers = []; // 记录用户的选择
+    let correctCount = 0;
+    let answeredCount = 0;
+
+    function initQuiz(limit) {
+        // 随机洗牌并抽取
+        currentQuestions = [...rawData].sort(() => 0.5 - Math.random()).slice(0, limit);
+        currentIndex = 0;
+        userAnswers = new Array(currentQuestions.length).fill(null);
+        correctCount = 0;
+        answeredCount = 0;
+        updateAccuracy();
+        renderQuestion();
+    }
+
+    function changeMode(mode) {
+        currentMode = mode;
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.innerText === getModeLabel(mode));
+        });
+        renderQuestion();
+    }
+
+    function getModeLabel(mode) {
+        return { category: '分类', composition: '组成', indications: '主治' }[mode];
+    }
+
+    function renderQuestion() {
+        const item = currentQuestions[currentIndex];
+        const questionContent = document.getElementById('question-content');
+        const optionsContainer = document.getElementById('options-container');
+        
+        // 题干显示
+        questionContent.innerText = item[currentMode];
+
+        // 生成选项
+        const correctName = item.name;
+        // 如果这道题之前没生成过选项，则生成并固定（防止切换模式时选项位置乱跳）
+        if (!item._options) {
+            let distractors = rawData
+                .filter(d => d.name !== correctName)
+                .sort(() => 0.5 - Math.random())
+                .slice(0, 3)
+                .map(d => d.name);
+            item._options = [correctName, ...distractors].sort(() => 0.5 - Math.random());
+        }
+
+        optionsContainer.innerHTML = '';
+        item._options.forEach(optName => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerText = optName;
+            
+            if (userAnswers[currentIndex] !== null) {
+                btn.classList.add('disabled');
+                if (optName === correctName) btn.classList.add('correct');
+                if (optName === userAnswers[currentIndex] && optName !== correctName) btn.classList.add('wrong');
+            } else {
+                btn.onclick = () => handleChoice(optName, correctName, btn);
+            }
+            optionsContainer.appendChild(btn);
+        });
+
+        document.getElementById('progress-text').innerText = `进度: ${currentIndex + 1} / ${currentQuestions.length}`;
+        document.getElementById('prev-btn').disabled = currentIndex === 0;
+        document.getElementById('next-btn').disabled = currentIndex === currentQuestions.length - 1;
+    }
+
+    function handleChoice(selected, correct, btn) {
+        userAnswers[currentIndex] = selected;
+        answeredCount++;
+        if (selected === correct) correctCount++;
+        
+        updateAccuracy();
+        
+        // 立即显示对错
+        const allBtns = document.querySelectorAll('.option-btn');
+        allBtns.forEach(b => {
+            b.classList.add('disabled');
+            if (b.innerText === correct) b.classList.add('correct');
+        });
+        if (selected !== correct) btn.classList.add('wrong');
+    }
+
+    function updateAccuracy() {
+        const rate = answeredCount === 0 ? 0 : Math.round((correctCount / answeredCount) * 100);
+        document.getElementById('accuracy-val').innerText = `${rate}%`;
+    }
+
+    function nextQuestion() {
+        if (currentIndex < currentQuestions.length - 1) {
+            currentIndex++;
+            renderQuestion();
+        }
+    }
+
+    function prevQuestion() {
+        if (currentIndex > 0) {
+            currentIndex--;
+            renderQuestion();
+        }
+    }
+
+    // 默认开始 10 题
+    window.onload = () => initQuiz(10);
+</script>
+
+</body>
+</html>

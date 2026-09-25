@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>臓腑弁証トレーニング（肝胆・心小腸）</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #3498db;
+            --step1-color: #8e44ad;
+            --step2-color: #e67e22;
+            --success-color: #27ae60;
+            --error-color: #e74c3c;
+            --bg-color: #f4f7f6;
+            --text-color: #2c3e50;
+        }
+
+        body {
+            font-family: "Hiragino Sans", "Meiryo", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- 顶部状态栏 --- */
+        .top-bar {
+            background: #fff;
+            padding: 10px 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 100;
+            position: relative;
+        }
+        .progress-container {
+            width: 100%;
+            height: 5px;
+            background: #eee;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        #progress-bar {
+            height: 100%;
+            background: var(--accent-color);
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .status-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+        .mode-selectors {
+            display: flex;
+            gap: 6px;
+        }
+        .mode-btn {
+            background: #eee;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .mode-btn.active {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        /* --- 核心布局区域 --- */
+        #main-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        /* PCモード */
+        .pc-layout #main-container { flex-direction: row; }
+        .pc-layout .content-left {
+            flex: 6;
+            padding: 25px 30px;
+            display: flex;
+            flex-direction: column;
+            border-right: 2px solid #e0e0e0;
+            background: #fdfdfd;
+            overflow-y: auto;
+        }
+        .pc-layout .options-right {
+            flex: 4;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-color);
+            overflow-y: auto;
+        }
+
+        /* 手机モード */
+        .mobile-layout #main-container { flex-direction: column; overflow-y: auto; }
+        .mobile-layout .content-left, 
+        .mobile-layout .options-right {
+            flex: none; width: 100%; padding: 15px; box-sizing: border-box;
+        }
+
+        /* --- 题干展示区 --- */
+        .question-card {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            line-height: 1.6;
+        }
+        .question-symptoms {
+            font-size: 1.15rem;
+            margin-bottom: 12px;
+            white-space: pre-line;
+        }
+        .tag-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .tag {
+            background: rgba(255,255,255,0.2);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        /* --- 答题阶段指示 --- */
+        .step-indicator {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 15px;
+        }
+        .step-indicator.step1 { background: var(--step1-color); }
+        .step-indicator.step2 { background: var(--step2-color); }
+
+        /* --- 中间反馈状态条 --- */
+        .interim-feedback {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            background: #fff;
+            border-left: 5px solid #ccc;
+            font-size: 0.95rem;
+        }
+
+        /* --- 选项列表 --- */
+        .options-list { display: flex; flex-direction: column; gap: 10px; }
+        .option-item {
+            background: white;
+            border: 2px solid #ddd;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s;
+        }
+        .option-item:hover { border-color: #bbb; background: #fafafa; }
+        .option-item.correct { background: var(--success-color) !important; color: white; border-color: #1e7e34; }
+        .option-item.wrong { background: var(--error-color) !important; color: white; border-color: #bd2130; }
+        .option-item.disabled { pointer-events: none; opacity: 0.6; }
+
+        /* --- 控制按钮 --- */
+        .button-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .btn {
+            padding: 12px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            background: #7f8c8d;
+            color: white;
+            text-align: center;
+        }
+        .btn-next { background: var(--accent-color); }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* --- 最终结算屏幕 --- */
+        .result-screen {
+            text-align: center;
+            padding: 30px 10px;
+        }
+        .result-score { font-size: 3.5rem; color: var(--accent-color); font-weight: bold; margin: 15px 0; }
+
+        /* 手机端固定底栏 */
+        .mobile-layout .fixed-nav {
+            position: fixed;
+            bottom: 0; left: 0; width: 100%;
+            background: white;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            padding: 10px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            box-sizing: border-box;
+            gap: 10px;
+        }
+        .mobile-layout #main-container { padding-bottom: 70px; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body class="pc-layout">
+
+    <!-- 顶部状态与导航 -->
+    <div class="top-bar">
+        <div class="progress-container"><div id="progress-bar"></div></div>
+        <div class="status-info">
+            <div class="mode-selectors">
+                <button class="mode-btn active" onclick="changeQuizCount(5)">5問</button>
+                <button class="mode-btn" onclick="changeQuizCount(10)">10問</button>
+                <button class="mode-btn" onclick="changeQuizCount(20)">全20問</button>
+            </div>
+            <div>進捗: <span id="progress-text">1 / 5</span></div>
+            <div id="accuracy-text">正解率: 0%</div>
+            <div><span style="cursor:pointer; color:var(--accent-color);" onclick="toggleLayout()">📱/💻</span></div>
+        </div>
+    </div>
+
+    <!-- 核心区域 -->
+    <div id="main-container">
+        <!-- 左侧：题干与反馈 -->
+        <div class="content-left">
+            <div id="step-badge" class="step-indicator step1">STEP 1：弁証名を選択してください</div>
+            
+            <div class="question-card" id="question-card">
+                <div class="question-symptoms" id="q-symptoms">読み込み中...</div>
+                <div class="tag-group" id="q-tags"></div>
+            </div>
+
+            <!-- 两阶段过程中的结果反馈卡 -->
+            <div id="interim-box" class="interim-feedback hidden"></div>
+
+            <div class="button-row pc-only-btns">
+                <button class="btn" id="btn-prev" onclick="prevQuestion()">前へ</button>
+                <button class="btn btn-next" id="btn-next" onclick="nextQuestion()">次へ</button>
+            </div>
+        </div>
+
+        <!-- 右侧：选项区 -->
+        <div class="options-right">
+            <div class="options-list" id="options-container">
+                <!-- 动态生成选项 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 手机端底栏 -->
+    <div id="mobile-fixed-nav" class="fixed-nav hidden">
+        <button class="btn" id="m-btn-prev" onclick="prevQuestion()">前へ</button>
+        <button class="btn btn-next" id="m-btn-next" onclick="nextQuestion()">次へ</button>
+    </div>
+
+<script>
+    // --- 教材データ（全20問）---
+    const allData = [
+        {
+            id: 1, name: "肝気鬱結", formula: "四逆散",
+            symptoms: "・イライラ感、悶々とした感情、よくため息をつく\n・胸脇部のつまり感、感情の抑制が困難、反発的な感情\n・肝・胆経に沿った部位の脹りや痛み\n・月経前の症状悪化、月経前の乳房の脹り、月経痛（脹痛）、月経不順",
+            pulse: "弦", factors: "精神的ストレス"
+        },
+        {
+            id: 2, name: "肝脾不和", formula: "逍遥散",
+            symptoms: "・便秘と下痢をくりかえす\n・精神的緊張やストレスによる腹痛や下痢\n・腹部の脹満感、食欲不振、ガスがたまる\n・脇部の脹りや痛み、月経不順",
+            pulse: "弦", factors: "精神的ストレス、暴飲暴食"
+        },
+        {
+            id: 3, name: "肝気犯胃", formula: "柴胡疏肝散 / 半夏厚朴湯",
+            symptoms: "・上腹部の痛みや不快感\n・ゲップ（曖気）、悪心、嘔吐、食欲不振（精神的ストレスで悪化）\n・脇部の脹りや痛み、月経不順",
+            pulse: "弦", factors: "精神的ストレス、暴飲暴食"
+        },
+        {
+            id: 4, name: "肝気犯肺", formula: "神秘湯 / 柴朴湯",
+            symptoms: "・呼吸しづらい、重度では呼吸困難（喘鳴を伴う）\n・精神的ストレス刺激で発作・増悪する\n・脇部の脹りや痛み、月経不順",
+            pulse: "弦", factors: "精神的ストレス"
+        },
+        {
+            id: 5, name: "気滞痰凝", formula: "半夏厚朴湯",
+            symptoms: "・咽喉の異物感（梅核気、つばを飲み込んでも吐いても変わらない）\n・精神的ストレスで症状が増悪する\n・脇部の脹りや痛み、月経不順",
+            pulse: "弦", factors: "精神的ストレス"
+        },
+        {
+            id: 6, name: "肝火上炎", formula: "竜胆瀉肝湯 / 大柴胡湯（便秘時）",
+            symptoms: "・イライラ感、爆発的な怒り、じっとしていられない\n・激しい頭痛や偏頭痛、突然の耳鳴りや難聴、目が赤い\n・口が苦い、口が渇く、イライラして眠れない\n・小便が濃い、便がかたい（精神的ストレスで悪化）",
+            pulse: "弦数", factors: "精神的ストレス、熱が加わること（天候、暖房、辛いもの、酒など）"
+        },
+        {
+            id: 7, name: "肝血虚", formula: "四物湯",
+            symptoms: "・目の疲れ、かすみ、乾き、視力低下\n・こむらがえり、耳鳴り（低音、セミの声のよう）\n・めまい、立ちくらみ、夢をよくみる\n・爪や唇の色がうすい、月経遅延、月経少量",
+            pulse: "弦細", factors: "睡眠不足、疲労、月経時"
+        },
+        {
+            id: 8, name: "肝陰虚", formula: "杞菊地黄丸",
+            symptoms: "・目の疲れ、かすみ、乾き、視力低下、こむらがえり\n・手足のほてり（夜間に悪化）、寝汗\n・不眠、夢をよくみる\n・めまい、立ちくらみ、爪がもろい、耳鳴り",
+            pulse: "弦、細数", factors: "疲労、大量の発汗、夏季、徹夜"
+        },
+        {
+            id: 9, name: "肝陽上亢", formula: "釣藤散（急性期） / 杞菊地黄丸（慢性期）",
+            symptoms: "・めまい、耳鳴り、激しい頭痛や偏頭痛、赤ら顔、目が赤い\n・イライラして眠れない、じっとしていられない\n・のどの渇き、手足のほてり、寝汗、夢をよくみる\n・足腰のだるさ、腰痛、夜間尿（肝腎陰虚合併時）",
+            pulse: "弦、細数", factors: "精神的ストレス、疲労、徹夜"
+        },
+        {
+            id: 10, name: "肝陽化風", formula: "天麻釣藤飲 / 釣藤散",
+            symptoms: "・激しいめまい、頭痛\n・筋肉のけいれん、ひきつけ、ふるえ\n・顔や口のゆがみ・ひきつれ、重症では意識不明\n・肝陽上亢や肝陰虚の症状を伴う",
+            pulse: "弦細", factors: "精神的ストレス、疲労、徹夜"
+        },
+        {
+            id: 11, name: "熱極生風", formula: "羚羊鈎藤湯 / 大柴胡湯合三黄瀉心湯",
+            symptoms: "・高熱\n・突然のけいれん、ふるえ、こわばり\n・重度では意識不明\n・激しい頭痛、充血など肝火上炎の症状を伴う",
+            pulse: "弦数", factors: "熱邪の侵入、精神的ストレス"
+        },
+        {
+            id: 12, name: "血虚生風", formula: "七物降下湯",
+            symptoms: "・手足のけいれん、ひきつけ、ふるえ、しびれ、知覚麻痺\n・顔や口のゆがみ\n・目のかすみ、爪や唇の色が淡白、顔色が悪いなどの肝血虚症状",
+            pulse: "弦細", factors: "疲労、睡眠不足、月経時"
+        },
+        {
+            id: 13, name: "寒滞肝脈", formula: "当帰四逆加呉茱萸生姜湯",
+            symptoms: "・肝・胆経に沿った部位（胸脇部、側腹部、鼠蹊部、陰部など）の引きつれや痛み\n・手足の冷え、寒がり\n・多尿、尿がうすいなどの寒証",
+            pulse: "沈弦あるいは沈遅", factors: "寒冷"
+        },
+        {
+            id: 14, name: "肝胆湿熱", formula: "竜胆瀉肝湯",
+            symptoms: "・肝・胆経に沿った部位（鼠蹊部、陰部など）のジクジクした湿疹やかゆみ\n・口が苦い、口が粘る、尿が濃く黄色い、帯下が臭う\n・イライラ感、ため息、胸脇部のつまった感じ、脹りや痛み",
+            pulse: "弦滑数", factors: "精神的ストレス、暴飲暴食、油もの・甘いものの過食、湿気"
+        },
+        {
+            id: 15, name: "心気虚", formula: "四君子湯 / 帰脾湯",
+            symptoms: "・動くとすぐに動悸・息切れがし、休むと楽になる（時に胸痛）\n・顔色が青白い\n・疲れやすい、声が小さいなどの気虚症状",
+            pulse: "細で無力", factors: "疲労、過度な運動"
+        },
+        {
+            id: 16, name: "心陽虚", formula: "桂枝人参湯 / 附子人参湯",
+            symptoms: "・動く・疲れるとすぐに動悸、息切れ、胸痛が起こる\n・顔色が青白い、疲れやすい、声が小さい\n・手足の冷え、寒がり\n・多尿、尿が多い、尿がうすい",
+            pulse: "沈で無力（時に遅）", factors: "寒冷、疲労、過度な運動"
+        },
+        {
+            id: 17, name: "心血虚", formula: "帰脾湯 / 四物湯合酸棗仁湯",
+            symptoms: "・動悸、不眠、夢をよくみる、健忘\n・不安感、驚きやすい\n・顔につやがない、めまい\n・爪や唇の色がうすい、月経少量",
+            pulse: "細で無力", factors: "睡眠不足、心労"
+        },
+        {
+            id: 18, name: "心陰虚", formula: "天王補心丹 / 柏子養心丸",
+            symptoms: "・動悸、不眠、夢をよくみる、健忘、不安感、驚きやすい\n・手足のほてり、のどの渇き、寝汗\n・じっとしていられない、微熱（午後〜夜間）\n・めまい、顔につやがない",
+            pulse: "細数", factors: "夜間、心労、大量の発汗"
+        },
+        {
+            id: 19, name: "心火亢盛", formula: "三黄瀉心湯",
+            symptoms: "・動悸、不眠、じっとしていられない、焦燥感\n・胸部の熱感、赤ら顔\n・舌にできものができやすい（口内炎）\n・尿が黄色い、血尿、便秘",
+            pulse: "数で有力", factors: "精神的ストレス、熱（天候、辛いもの、酒など）"
+        },
+        {
+            id: 20, name: "心血瘀阻", formula: "冠心Ⅱ号方 / 血府逐瘀湯",
+            symptoms: "・一過性の胸部の締めつけられる痛み、または刺痛（背中や腕へ放散）\n・夜間の発作的な胸痛\n・動悸、不眠\n・唇が紫色、舌裏の絡脈怒張",
+            pulse: "渋、結代", factors: "激しい運動、心労"
+        }
+];
+
+    // --- 状態管理 ---
+    let currentQuestions = [];
+    let currentIndex = 0;
+    let quizCount = 5;
+    let currentStep = 1; // 1: 弁証選択, 2: 方剤選択, 3: 解答済
+    let userZhengChoices = {};
+    let userFormulaChoices = {};
+    let isFinished = false;
+
+    window.onload = () => {
+        if (/Android|iPhone/i.test(navigator.userAgent)) applyLayout('mobile');
+        else applyLayout('pc');
+        initQuiz(5);
+
+        // キーボード操作対応
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.code === 'Space') {
+                const nextBtn = document.getElementById('btn-next');
+                if (!nextBtn.disabled) nextQuestion();
+            }
+        });
+    };
+
+    function changeQuizCount(count) {
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.innerText.includes(count === 20 ? '全' : count));
+        });
+        initQuiz(count);
+    }
+
+    function initQuiz(count) {
+        quizCount = count;
+        isFinished = false;
+        let shuffled = [...allData].sort(() => 0.5 - Math.random());
+        currentQuestions = shuffled.slice(0, count).map(q => ({
+            ...q,
+            zhengOptions: generateZhengOptions(q.name),
+            formulaOptions: generateFormulaOptions(q.formula)
+        }));
+
+        currentIndex = 0;
+        userZhengChoices = {};
+        userFormulaChoices = {};
+        renderQuestion();
+    }
+
+    // 弁証のダミー選択肢生成
+    function generateZhengOptions(correctName) {
+        let others = allData.map(d => d.name).filter(n => n !== correctName);
+        let uniqueOthers = [...new Set(others)].sort(() => 0.5 - Math.random()).slice(0, 3);
+        uniqueOthers.push(correctName);
+        return uniqueOthers.sort(() => 0.5 - Math.random());
+    }
+
+    // 方剤のダミー選択肢生成
+    function generateFormulaOptions(correctFormula) {
+        let others = allData.map(d => d.formula).filter(f => f !== correctFormula);
+        let uniqueOthers = [...new Set(others)].sort(() => 0.5 - Math.random()).slice(0, 3);
+        uniqueOthers.push(correctFormula);
+        return uniqueOthers.sort(() => 0.5 - Math.random());
+    }
+
+    function renderQuestion() {
+        const q = currentQuestions[currentIndex];
+        const hasAnswered = userFormulaChoices[currentIndex] !== undefined;
+        
+        // 進捗状況
+        const progress = ((currentIndex + 1) / currentQuestions.length) * 100;
+        document.getElementById('progress-bar').style.width = `${progress}%`;
+        document.getElementById('progress-text').innerText = `${currentIndex + 1} / ${currentQuestions.length}`;
+        updateAccuracy();
+
+        // 終了画面
+        if (isFinished) {
+            showFinalScreen();
+            return;
+        }
+
+        // 题干表示
+        document.getElementById('q-symptoms').innerText = q.symptoms;
+        const tagsContainer = document.getElementById('q-tags');
+        tagsContainer.innerHTML = '';
+        if (q.tongue) tagsContainer.innerHTML += `<span class="tag">舌: ${q.tongue}</span>`;
+        if (q.pulse) tagsContainer.innerHTML += `<span class="tag">脈: ${q.pulse}</span>`;
+        if (q.factors) tagsContainer.innerHTML += `<span class="tag">悪化要因: ${q.factors}</span>`;
+
+        // 過去に回答済みか、未回答かによるステップ復元
+        if (hasAnswered) {
+            currentStep = 3;
+            renderCompletedState(q);
+        } else if (userZhengChoices[currentIndex] !== undefined) {
+            currentStep = 2;
+            renderStep2(q);
+        } else {
+            currentStep = 1;
+            renderStep1(q);
+        }
+
+        updateNavButtons();
+    }
+
+    // STEP 1：弁証選択の描画
+    function renderStep1(q) {
+        const badge = document.getElementById('step-badge');
+        badge.className = "step-indicator step1";
+        badge.innerText = "STEP 1：弁証名を選択してください";
+
+        document.getElementById('interim-box').classList.add('hidden');
+
+        const optContainer = document.getElementById('options-container');
+        optContainer.innerHTML = '';
+
+        q.zhengOptions.forEach(opt => {
+            const btn = document.createElement('div');
+            btn.className = 'option-item';
+            btn.innerText = opt;
+            btn.onclick = () => handleZhengSelect(opt);
+            optContainer.appendChild(btn);
+        });
+    }
+
+    // STEP 1 選択処理
+    function handleZhengSelect(choice) {
+        userZhengChoices[currentIndex] = choice;
+        const q = currentQuestions[currentIndex];
+
+        // 選択肢の正誤色分けフィードバック
+        const optContainer = document.getElementById('options-container');
+        Array.from(optContainer.children).forEach(btn => {
+            btn.classList.add('disabled');
+            if (btn.innerText === q.name) btn.classList.add('correct');
+            else if (btn.innerText === choice) btn.classList.add('wrong');
+        });
+
+        // 0.4秒後にSTEP2へ移行
+        setTimeout(() => {
+            currentStep = 2;
+            renderStep2(q);
+        }, 450);
+    }
+
+    // STEP 2：方剤選択の描画
+    function renderStep2(q) {
+        const badge = document.getElementById('step-badge');
+        badge.className = "step-indicator step2";
+        badge.innerText = "STEP 2：代表方剤を選択してください";
+
+        // STEP1の選択結果を表示
+        const userZheng = userZhengChoices[currentIndex];
+        const isZhengRight = userZheng === q.name;
+        const interimBox = document.getElementById('interim-box');
+        interimBox.classList.remove('hidden');
+        interimBox.innerHTML = `
+            <div><b>STEP 1 弁証：</b> 
+                <span style="color:${isZhengRight ? 'var(--success-color)' : 'var(--error-color)'}; font-weight:bold;">
+                    ${userZheng} ${isZhengRight ? '（正解〇）' : `（不正解× → 正解: ${q.name}）`}
+                </span>
+            </div>
+        `;
+
+        const optContainer = document.getElementById('options-container');
+        optContainer.innerHTML = '';
+
+        q.formulaOptions.forEach(opt => {
+            const btn = document.createElement('div');
+            btn.className = 'option-item';
+            btn.innerText = opt;
+            btn.onclick = () => handleFormulaSelect(opt);
+            optContainer.appendChild(btn);
+        });
+    }
+
+    // STEP 2 選択処理（両方正解のみ1点）
+    function handleFormulaSelect(choice) {
+        userFormulaChoices[currentIndex] = choice;
+        currentStep = 3;
+        const q = currentQuestions[currentIndex];
+
+        renderCompletedState(q);
+        updateAccuracy();
+        updateNavButtons();
+    }
+
+    // 両方の回答が完了した状態の描画（振り返り用）
+    function renderCompletedState(q) {
+        const userZheng = userZhengChoices[currentIndex];
+        const userFormula = userFormulaChoices[currentIndex];
+        const isZhengRight = userZheng === q.name;
+        const isFormulaRight = userFormula === q.formula;
+        const isAllRight = isZhengRight && isFormulaRight;
+
+        const badge = document.getElementById('step-badge');
+        badge.className = `step-indicator ${isAllRight ? 'step-success' : 'step1'}`;
+        badge.style.background = isAllRight ? "var(--success-color)" : "var(--error-color)";
+        badge.innerText = isAllRight ? "判定：正解（1点）" : "判定：不正解（0点・両方正解で1点）";
+
+        const interimBox = document.getElementById('interim-box');
+        interimBox.classList.remove('hidden');
+        interimBox.innerHTML = `
+            <div style="font-size:1.05rem; margin-bottom:5px;"><b>正解まとめ</b></div>
+            <div>・正しい弁証：<b>${q.name}</b> ${isZhengRight ? '✅' : `❌ (あなたの選択: ${userZheng})`}</div>
+            <div>・代表方剤：<b>${q.formula}</b> ${isFormulaRight ? '✅' : `❌ (あなたの選択: ${userFormula})`}</div>
+        `;
+
+        // 右側の選択肢に正解/不正解を表示
+        const optContainer = document.getElementById('options-container');
+        optContainer.innerHTML = '';
+        q.formulaOptions.forEach(opt => {
+            const btn = document.createElement('div');
+            btn.className = 'option-item disabled';
+            btn.innerText = opt;
+            if (opt === q.formula) btn.classList.add('correct');
+            else if (opt === userFormula) btn.classList.add('wrong');
+            optContainer.appendChild(btn);
+        });
+    }
+
+    // 正解率の計算（弁証・方剤の双方が一致した時のみ正解カウント）
+    function updateAccuracy() {
+        const answeredIndices = Object.keys(userFormulaChoices);
+        if (answeredIndices.length === 0) {
+            document.getElementById('accuracy-text').innerText = `正解率: 0%`;
+            return;
+        }
+
+        let fullCorrectCount = 0;
+        answeredIndices.forEach(idx => {
+            const q = currentQuestions[idx];
+            if (userZhengChoices[idx] === q.name && userFormulaChoices[idx] === q.formula) {
+                fullCorrectCount++;
+            }
+        });
+
+        const acc = Math.round((fullCorrectCount / answeredIndices.length) * 100);
+        document.getElementById('accuracy-text').innerText = `正解率: ${acc}% (${fullCorrectCount}/${answeredIndices.length})`;
+    }
+
+    function updateNavButtons() {
+        const isCurrentAnswered = userFormulaChoices[currentIndex] !== undefined;
+        const prevBtn = document.getElementById('btn-prev');
+        const mPrevBtn = document.getElementById('m-btn-prev');
+        const nextBtn = document.getElementById('btn-next');
+        const mNextBtn = document.getElementById('m-btn-next');
+
+        const canPrev = currentIndex > 0;
+        prevBtn.disabled = !canPrev;
+        mPrevBtn.disabled = !canPrev;
+
+        // 回答が済んでいない場合は次へ進めない
+        nextBtn.disabled = !isCurrentAnswered;
+        mNextBtn.disabled = !isCurrentAnswered;
+    }
+
+    function nextQuestion() {
+        if (isFinished) {
+            initQuiz(quizCount);
+            return;
+        }
+        if (currentIndex < currentQuestions.length - 1) {
+            currentIndex++;
+            renderQuestion();
+        } else {
+            isFinished = true;
+            renderQuestion();
+        }
+    }
+
+    function prevQuestion() {
+        if (currentIndex > 0) {
+            isFinished = false;
+            currentIndex--;
+            renderQuestion();
+        }
+    }
+
+    function showFinalScreen() {
+        document.getElementById('step-badge').classList.add('hidden');
+        document.getElementById('interim-box').classList.add('hidden');
+        
+        let fullCorrectCount = 0;
+        currentQuestions.forEach((q, idx) => {
+            if (userZhengChoices[idx] === q.name && userFormulaChoices[idx] === q.formula) {
+                fullCorrectCount++;
+            }
+        });
+        const acc = Math.round((fullCorrectCount / currentQuestions.length) * 100);
+
+        document.getElementById('question-card').innerHTML = `
+            <div class="result-screen">
+                <h2>テスト完了！</h2>
+                <div class="result-score">${acc}%</div>
+                <p>スコア: ${fullCorrectCount} / ${currentQuestions.length} 問完全正解</p>
+                <button class="btn btn-next" style="margin-top:15px; padding:12px 25px;" onclick="initQuiz(${quizCount})">もう一度解く</button>
+            </div>
+        `;
+        document.getElementById('options-container').innerHTML = '';
+        
+        document.getElementById('btn-next').disabled = false;
+        document.getElementById('m-btn-next').disabled = false;
+        document.getElementById('btn-prev').disabled = true;
+        document.getElementById('m-btn-prev').disabled = true;
+    }
+
+    // レイアウト切り替え（PC / スマホ）
+    function applyLayout(type) {
+        if (type === 'mobile') {
+            document.body.className = 'mobile-layout';
+            document.getElementById('mobile-fixed-nav').classList.remove('hidden');
+            document.querySelectorAll('.pc-only-btns').forEach(el => el.classList.add('hidden'));
+        } else {
+            document.body.className = 'pc-layout';
+            document.getElementById('mobile-fixed-nav').classList.add('hidden');
+            document.querySelectorAll('.pc-only-btns').forEach(el => el.classList.remove('hidden'));
+        }
+    }
+
+    function toggleLayout() {
+        if (document.body.className === 'pc-layout') applyLayout('mobile');
+        else applyLayout('pc');
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exam Prep 刷题导航</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --badge-bg: #e0e7ff;
+      --badge-text: #3730a3;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      padding: 30px 16px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    /* 顶部标题与搜索 */
+    header {
+      margin-bottom: 30px;
+      text-align: center;
+    }
+    h1 { font-size: 1.8rem; margin-bottom: 8px; }
+    p.subtitle { color: var(--text-muted); font-size: 0.95rem; }
+
+    .search-wrapper {
+      margin-top: 20px;
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .search-input {
+      width: 100%;
+      padding: 12px 18px;
+      font-size: 1rem;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      outline: none;
+      transition: all 0.2s ease;
+      background: #ffffff;
+    }
+    .search-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+
+    /* 科目模块 */
+    .subject-section {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    .subject-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .subject-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .badge-count {
+      font-size: 0.8rem;
+      background: var(--badge-bg);
+      color: var(--badge-text);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+
+    /* 卡片网格布局 */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+    }
+    .card:hover {
+      transform: translateY(-3px);
+      border-color: var(--primary);
+      box-shadow: 0 6px 12px rgba(37, 99, 235, 0.08);
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .card-date {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .card-tag {
+      font-size: 0.7rem;
+      background: #f1f5f9;
+      color: var(--text-muted);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .card-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>📖 Exam Prep 备考导航</h1>
+      <p class="subtitle">点击卡片即可直接进入对应刷题页面</p>
+      
+      <div class="search-wrapper">
+        <input 
+          type="text" 
+          id="searchInput" 
+          class="search-input" 
+          placeholder="🔍 搜索资料、日期（如：202605、houzai）..." 
+          onkeyup="filterCards()"
+        >
+      </div>
+    </header>
+
+    <!-- ================= 科目一：SXD ================= -->
+    <section class="subject-section">
+      <div class="subject-header">
+        <div class="subject-title">📁 科目：SXD</div>
+        <span class="badge-count">已收录 7 份</span>
+      </div>
+
+      <div class="grid">
+        <!-- 202603 -->
+        <a href="./SXD/202603.html" class="card">
+          <div>
+            <div class="card-top">
+              <span class="card-date">2026.03</span>
+              <span class="card-tag">综合</span>
+            </div>
+            <div class="card-title">202603 练习卷</div>
+            <div class="card-desc">常规练习题</div>
+          </div>
+        </a>
+
+        <!-- 202604 -->
+        <a href="./SXD/202604.html" class="card">
+          <div>
+            <div class="card-top">
+              <span class="card-date">2026.04</span>
+              <span class="card-tag">综合</span>
+            </div>
+            <div class="card-title">202604 练习卷</div>
+            <div class="card-desc">常规练习题</div>
+          </div>
+        </a>
+
+        <!-- 202605houzai (方剂) -->
+        <a href="./SXD/202605houzai.html" class="card">
+          <div>
+            <div class="card-top">
+              <span class="card-date">2026.05</span>
+              <span class="card-tag">专项: 方剂</span>
+            </div>
+            <div class="card-title">202605 - Houzai</div>
+            <div class="card-desc">方剂专项练习</div>
+          </div>
+        </a>
+
+        <!-- 202605syouyaku (生药) -->
+        <a href="./SXD/202605syouyaku.html" class="card">
+          <div>
+            <div class="card-top">
+              <span class="card-date">2026.05</span>
+              <span class="card-tag">专项: 生药</span>
+            </div>
+            <div class="card-title">202605 - Syouyaku</div>
+            <div class="card-desc">生药专项练习</div>
+          </div>
+        </a>
+
+        <!-- 202605tiryou (治疗) -->
+        <a href="./SXD/202605tiryou.html" class="card">
+          <div>
+            <div class="card-top">
+              <span class="card-date">2026.05</span>
+              <span class="card-tag">专项: 治疗</span>
+            </div>
+            <div class="card-title">202605 - Tiryou</div>
+            <div class="card-desc">治疗专项练习</div>
+          </div>
+        </a>
+
+        <!-- 202608 -->
+        <a href="./SXD/202608.html" class="card">
+          <div>
+            <div class="card-top">
+              <span class="card-date">2026.08</span>
+              <span class="card-tag">综合</span>
+            </div>
+            <div class="card-title">202608 练习卷</div>
+            <div class="card-desc">常规练习题</div>
+          </div>
+        </a>
+
+        <!-- 202609 -->
+        <a href="./SXD/202609.html" class="card">
+          <div>
+            <div class="card-top">
+              <span class="card-date">2026.09</span>
+              <span class="card-tag">综合</span>
+            </div>
+            <div class="card-title">202609 练习卷</div>
+            <div class="card-desc">常规练习题</div>
+          </div>
+        </a>
+
+      </div>
+    </section>
+
+  </div>
+
+  <!-- 搜索脚本 -->
+  <script>
+    function filterCards() {
+      const keyword = document.getElementById('searchInput').value.toLowerCase();
+      const cards = document.querySelectorAll('.card');
+
+      cards.forEach(card => {
+        const text = card.innerText.toLowerCase();
+        const href = card.getAttribute('href').toLowerCase();
+        // 既可以搜卡片文字，也可以直接搜文件名
+        if (text.includes(keyword) || href.includes(keyword)) {
+          card.style.display = "flex";
+        } else {
+          card.style.display = "none";
+        }
+      });
+    }
+  </script>
+
+</body>
+</html>
