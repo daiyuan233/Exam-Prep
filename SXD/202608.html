@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>中医学入門 事前確認テスト</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #3498db;
+            --success-color: #27ae60;
+            --error-color: #e74c3c;
+            --bg-color: #f4f7f6;
+            --text-color: #2c3e50;
+        }
+
+        body {
+            font-family: "Hiragino Sans", "Meiryo", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- 顶部状态栏 --- */
+        .top-bar {
+            background: #fff;
+            padding: 12px 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 100;
+            position: relative;
+        }
+        .progress-container {
+            width: 100%;
+            height: 4px;
+            background: #eee;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        #progress-bar {
+            height: 100%;
+            background: var(--accent-color);
+            width: 0%;
+            transition: width 0.3s ease-in-out;
+        }
+        .status-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        .top-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        .top-link {
+            font-size: 1rem;
+            color: var(--accent-color);
+            cursor: pointer;
+            text-decoration: underline;
+            font-weight: bold;
+        }
+
+        /* --- 核心布局区域 --- */
+        #main-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        /* PC模式 */
+        .pc-layout #main-container { flex-direction: row; }
+        .pc-layout .content-left {
+            flex: 5;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            border-right: 2px solid #eee;
+            background: #fdfdfd;
+            overflow-y: auto;
+        }
+        .pc-layout .options-right {
+            flex: 5;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-color);
+            overflow-y: auto;
+        }
+
+        /* 手机模式 */
+        .mobile-layout #main-container { flex-direction: column; overflow-y: auto; }
+        .mobile-layout .content-left, 
+        .mobile-layout .options-right {
+            flex: none; width: 100%; padding: 15px; box-sizing: border-box;
+        }
+
+        /* --- 模式选择标签 --- */
+        .mode-tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+        .tab {
+            flex: 1;
+            padding: 10px 5px;
+            text-align: center;
+            background: #e0e0e0;
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 8px;
+            font-size: 0.95rem;
+        }
+        .tab.active { background: var(--accent-color); color: white; }
+        
+        .mobile-layout .mode-tabs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+        }
+
+        /* --- 题目显示 --- */
+        .question-box {
+            background: #2c3e50;
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            min-height: 150px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            font-size: 1.3rem;
+            line-height: 1.6;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .mobile-layout .question-box { font-size: 1.15rem; padding: 20px; min-height: 120px; }
+
+        /* --- 结果显示 --- */
+        .result-screen {
+            text-align: center;
+            padding: 20px;
+        }
+        .result-score { font-size: 3rem; color: var(--accent-color); margin: 10px 0; }
+
+        /* --- 选项列表 --- */
+        .options-list { display: flex; flex-direction: column; gap: 10px; }
+        .option-item {
+            background: white;
+            border: 2px solid #ddd;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s;
+        }
+        .option-item:hover { background: #f8f9fa; border-color: #bbb; }
+        .option-item.correct { background: var(--success-color) !important; color: white; border-color: #1e7e34; }
+        .option-item.wrong { background: var(--error-color) !important; color: white; border-color: #bd2130; }
+        .option-item.correct .opt-label, .option-item.wrong .opt-label { color: white; }
+        
+        .opt-label {
+            font-weight: bold;
+            margin-right: 10px;
+            color: var(--accent-color);
+            display: inline-block;
+            width: 25px;
+        }
+
+        /* --- 解説エリア --- */
+        .explanation {
+            margin-top: 15px;
+            padding: 15px;
+            background: #e8f4fd;
+            border-left: 5px solid var(--accent-color);
+            border-radius: 5px;
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #333;
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+        .explanation.show { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- 并排按钮布局 (1行2列) --- */
+        .button-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .btn {
+            padding: 15px 5px;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            background: #6c757d;
+            color: white;
+            text-align: center;
+        }
+        .btn-next { background: var(--accent-color); }
+
+        /* --- 手机端固定底栏 --- */
+        .mobile-layout .fixed-nav {
+            position: fixed;
+            bottom: 0; left: 0; width: 100%;
+            background: white;
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            padding: 10px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            box-sizing: border-box;
+            gap: 10px;
+        }
+        .mobile-layout #main-container { padding-bottom: 80px; }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body class="pc-layout">
+
+    <div class="top-bar">
+        <div class="progress-container"><div id="progress-bar"></div></div>
+        <div class="status-info">
+            <div>問題: <span id="progress-text">1 / 50</span></div>
+            <div id="accuracy-text">正解率: 0%</div>
+            <div class="top-controls">
+                <span class="top-link" onclick="toggleLayout()">PC/スマホ切替</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-container">
+        <!-- 左侧：题目与控制 -->
+        <div class="content-left">
+            <div class="mode-tabs">
+                <div class="tab active" data-mode="all" onclick="setMode('all')">全範囲テスト(50問)</div>
+                <div class="tab" data-mode="sec1" onclick="setMode('sec1')">第一節(18問)</div>
+                <div class="tab" data-mode="sec2" onclick="setMode('sec2')">第二節(32問)</div>
+            </div>
+            
+            <div class="question-box" id="question-area">
+                <div id="question-content">読み込み中...</div>
+            </div>
+
+            <!-- PC端按钮 -->
+            <div class="button-row pc-only-btns">
+                <button class="btn" onclick="prevQuestion()">前の問題へ</button>
+                <button class="btn btn-next" onclick="nextQuestion()">次の問題へ (Space)</button>
+            </div>
+            <p id="shortcut-hint" style="margin-top:10px; font-size:0.9rem; color:#999;" class="pc-only-btns">ヒント：解答後、キーボードの「スペースキー」または「右矢印キー」で次の問題へ進めます。</p>
+        </div>
+
+        <!-- 右侧：选项与解析 -->
+        <div class="options-right">
+            <div class="options-list" id="options"></div>
+            <div id="explanation-area" class="explanation"></div>
+        </div>
+    </div>
+
+    <!-- 手机端固定底栏 -->
+    <div id="mobile-fixed-nav" class="fixed-nav hidden">
+        <button class="btn" onclick="prevQuestion()">前へ</button>
+        <button class="btn btn-next" onclick="nextQuestion()">次へ進む</button>
+    </div>
+
+<script>
+    // 50問完全網羅データ
+    const data = [
+        // --- 第一節（中医学の構造） ---
+        { id:1, sec:1, q:"中医学の「整体観」において、「津液の運行・代謝」に関わる臓腑・器官の組み合わせとして正しいものはどれか。", opts:["脾・肺・腎", "肺・腎・膀胱・経絡・三焦など", "脾・腎", "心・脾・肝・経絡", "心・肺・肝・経絡"], ans:1, exp:"津液の運行・代謝に関わるのは「肺・腎・膀胱・経絡・三焦など」です。（気の生成は脾・肺・腎、血の生成は脾・腎）" },
+        { id:2, sec:1, q:"「気の生成」におもに関わる臓腑の組み合わせはどれか。", opts:["脾・肺・腎", "心・脾・腎", "肝・心・肺", "肺・肝・腎", "心・脾・肝"], ans:0, exp:"気の生成に関わるのは「脾・肺・腎」です。" },
+        { id:3, sec:1, q:"四診のうち、患者の排泄物の臭いを嗅いだり、音声を聞いたりして情報を収集する方法はどれか。", opts:["望診", "聞診", "問診", "切診", "按診"], ans:1, exp:"臭いや声で情報を集めるのは「聞診（ぶんしん）」です。切診は脈を取るなど触れる診察です。" },
+        { id:4, sec:1, q:"四診で集めた情報を分析し、疾病の位置や性質、原因などを総合的にあらわした「証」を決定する過程を何というか。", opts:["整体観", "弁証", "論治", "相生", "相克"], ans:1, exp:"情報を分析して証を決めるのが「弁証」、それにしたがい治療方針をたてるのが「論治」です。" },
+        { id:5, sec:1, q:"決定した「証」にしたがって治療方針（治法）をたてることを何というか。", opts:["整体観", "弁証", "論治", "治則", "帰納"], ans:2, exp:"証にしたがって治療方針をたてることを「論治（ろんち）」といいます。" },
+        { id:6, sec:1, q:"八綱弁証において、「病気の位置」を分類するものはどれか。", opts:["陰と陽", "表と裏", "寒と熱", "虚と実", "気と血"], ans:1, exp:"表裏は病気の位置、寒熱は病気の性質、虚実は抵抗力と邪の盛衰をあらわします。" },
+        { id:7, sec:1, q:"陰陽の分類において、「陽」に属するものの組み合わせはどれか。", opts:["五臓・血・寒性", "体内部・下半身・静止", "六腑・気・活動", "五臓・気・熱性", "体内部・血・興奮"], ans:2, exp:"陽は「体表部・上半身・六腑・気・興奮・活動・熱性」などです。五臓や血は陰に属します。" },
+        { id:8, sec:1, q:"気は「陽」、血は「陰」とされる。気の中で、体表をまとう「衛気」と、血の成分となる「営気」を比べた場合、陰に属するのはどちらか。", opts:["衛気", "営気", "どちらも陽", "どちらも陰", "比較できない"], ans:1, exp:"陽（気）の中でも、衛気は陽、営気は血の成分となるため相対的に陰（陽中の陰）とされます。" },
+        { id:9, sec:1, q:"「気は血を全身に送り、血は気を栄養する」といった、陰と陽が単独では存在できず、互いに依存しあう関係を何というか。", opts:["陰陽制約", "陰陽互根", "陰陽転化", "陰陽対立", "陰陽消長"], ans:1, exp:"互いに依存しあう関係を「陰陽互根（いんようごこん）」といいます。" },
+        { id:10, sec:1, q:"からだの温まりすぎを抑制し、冷えすぎを抑制するなど、一方が他方を抑制してバランスを保つ関係を何というか。", opts:["陰陽制約", "陰陽互根", "陰陽転化", "陰陽対立", "陰陽消長"], ans:0, exp:"一方が他方を抑制しバランスを保つ関係を「陰陽制約（いんようせいやく）」といいます。" },
+        { id:11, sec:1, q:"五行の配当において、「火」に属する臓腑の組み合わせはどれか。", opts:["肝・胆", "心・小腸", "脾・胃", "肺・大腸", "腎・膀胱"], ans:1, exp:"木＝肝胆、火＝心小腸、土＝脾胃、金＝肺大腸、水＝腎膀胱です。" },
+        { id:12, sec:1, q:"五行の配当において、「金」に属する感覚器官（五官）と感情（五情）の組み合わせはどれか。", opts:["目 - 怒", "舌 - 喜", "口 - 思", "鼻 - 悲", "耳 - 驚"], ans:3, exp:"金に属するのは「肺・大腸・皮・鼻・悲・白・秋・辛」です。" },
+        { id:13, sec:1, q:"五行の「水」に属する味（五味）はどれか。", opts:["酸", "苦", "甘", "辛", "鹹"], ans:4, exp:"酸(木)、苦(火)、甘(土)、辛(金)、鹹(水)となります。鹹(かん)は塩辛い味です。" },
+        { id:14, sec:1, q:"季節（五季）において、「春」が属する五行はどれか。", opts:["木", "火", "土", "金", "水"], ans:0, exp:"春(木)、夏(火)、土用(土)、秋(金)、冬(水)となります。" },
+        { id:15, sec:1, q:"五臓の「脾」が属する五行の色（五色）はどれか。", opts:["青", "赤", "黄", "白", "黒"], ans:2, exp:"脾は「土」に属し、色は「黄」です。（木=青、火=赤、金=白、水=黒）" },
+        { id:16, sec:1, q:"五行の「相生（母子関係）」において、「金」が生み出す（助ける）ものはどれか。", opts:["木", "火", "土", "金", "水"], ans:4, exp:"相生は「木生火、火生土、土生金、金生水、水生木」の順です。金は水を生みます（金生水）。" },
+        { id:17, sec:1, q:"五行の「相克（制約関係）」において、「水」が克する（制約する）ものはどれか。", opts:["木", "火", "土", "金", "水"], ans:1, exp:"相克は「木克土、土克水、水克火、火克金、金克木」です。水は火を消すように克します。" },
+        { id:18, sec:1, q:"肝の働きが強まりすぎて脾の働きを抑制しすぎ、消化不良などを起こす現象（相克が過剰になった状態）を何というか。", opts:["相生", "相克", "相乗", "相侮", "互根"], ans:2, exp:"相手を抑制しすぎる異常な状態を「相乗（そうじょう）」といいます。逆に反抗されるのを「相侮（そうぶ）」といいます。" },
+
+        // --- 第二節（人体の生理） ---
+        { id:19, sec:2, q:"「心」と表裏関係にある腑はどれか。", opts:["胆", "小腸", "胃", "大腸", "膀胱"], ans:1, exp:"表裏関係は「肝-胆」「心-小腸」「脾-胃」「肺-大腸」「腎-膀胱」「心包-三焦」です。" },
+        { id:20, sec:2, q:"「三焦」と表裏関係にある臓はどれか。", opts:["肝", "心", "脾", "心包", "腎"], ans:3, exp:"「心包」と「三焦」が表裏関係をなします。" },
+        { id:21, sec:2, q:"全身の気のめぐりを順調にさせ、精神状態を安定させる「疏泄（そせつ）」を主る臓腑はどれか。", opts:["肝", "心", "脾", "肺", "腎"], ans:0, exp:"疏泄を主るのは「肝」です。失調するとイライラや気の停滞が起きます。" },
+        { id:22, sec:2, q:"「血を蔵す（貯蔵し、血量を調節する）」働きを持つ臓腑はどれか。", opts:["肝", "心", "脾", "肺", "腎"], ans:0, exp:"血を蔵するのは「肝」です。" },
+        { id:23, sec:2, q:"筋肉の働きを維持し、「筋を主る」臓腑はどれか。", opts:["肝", "心", "脾", "肺", "腎"], ans:0, exp:"肝は「筋（すじ・筋肉）」を主り、「目」に開竅します。" },
+        { id:24, sec:2, q:"「血脈を主る（血を全身に循環させる）」臓腑はどれか。", opts:["肝", "心", "脾", "肺", "腎"], ans:1, exp:"血脈を主り、血を全身に循環させるのは「心」です。" },
+        { id:25, sec:2, q:"感情、思考、意識などすべての精神的な働きを統括する「神明を主る」臓腑はどれか。", opts:["肝", "心", "脾", "肺", "腎"], ans:1, exp:"神明（精神活動の統括）を主るのは「心」です。" },
+        { id:26, sec:2, q:"飲食物を消化・吸収し、水穀の精微を全身に送る「運化を主る」臓腑はどれか。", opts:["肝", "心", "脾", "肺", "腎"], ans:2, exp:"消化吸収（運化）を主るのは「脾」です。" },
+        { id:27, sec:2, q:"気が血を統率し、血が脈外に漏れ出すのを防ぐ「血を統す」働きを持つ臓腑はどれか。", opts:["肝", "心", "脾", "肺", "腎"], ans:2, exp:"血が漏れないようにする（統血）のは「脾」の重要な機能です。" },
+        { id:28, sec:2, q:"臓腑や器官を定位置に維持し、失調すると胃下垂や脱肛などを引き起こす「昇提を主る」臓腑はどれか。", opts:["肝", "心", "脾", "肺", "腎"], ans:2, exp:"内臓を上に持ち上げて位置を維持するのは「脾」の昇提作用です。" },
+        { id:29, sec:2, q:"「一身の気を主る」とされ、呼吸によって清気を吸い込み、濁気を吐き出す臓腑はどれか。", opts:["肝", "心", "脾", "肺", "腎"], ans:3, exp:"呼吸や一身の気（宗気の生成など）を主るのは「肺」です。" },
+        { id:30, sec:2, q:"気や水液を全身に散布する「宣発」と、下方に降ろす「粛降」を主る臓腑はどれか。", opts:["肝", "心", "脾", "肺", "腎"], ans:3, exp:"宣発（外・上へ）と粛降（内・下へ）を主るのは「肺」です。" },
+        { id:31, sec:2, q:"精を蔵し、人体の成長・発育・生殖を主る臓腑はどれか。", opts:["肝", "心", "脾", "肺", "腎"], ans:4, exp:"精を蔵し、生命の根源的な働き（発育・生殖）を主るのは「腎」です。" },
+        { id:32, sec:2, q:"肺の粛降作用によって運ばれてきた水液を受け取り、尿として排泄する「水を主る」臓腑はどれか。", opts:["肝", "心", "脾", "肺", "腎"], ans:4, exp:"水液代謝の根本であり、「水を主る」のは「腎」です。" },
+        { id:33, sec:2, q:"肺が吸い込んだ清気を引き込み、蓄えることで深い呼吸を可能にする「納気を主る」臓腑はどれか。", opts:["肝", "心", "脾", "肺", "腎"], ans:4, exp:"呼吸は肺が行いますが、深く吸い込む（納気）のを助けるのは「腎」です。" },
+        { id:34, sec:2, q:"「骨を主り、髄を生じ、脳に通ず」とされる臓腑はどれか。", opts:["肝", "心", "脾", "肺", "腎"], ans:4, exp:"骨、髄、脳、耳、二陰に関わるのはすべて「腎」です。" },
+        { id:35, sec:2, q:"胆汁を貯蔵し、精神活動において「決断を主る」腑はどれか。", opts:["胆", "胃", "小腸", "大腸", "膀胱"], ans:0, exp:"胆は「決断を主る」とされ、勇気や決断力に関わります。" },
+        { id:36, sec:2, q:"飲食物を受納し、「腐熟を主る（初歩的な消化）」腑はどれか。", opts:["胆", "胃", "小腸", "大腸", "膀胱"], ans:1, exp:"胃は飲食物を受納し、ドロドロに溶かす「腐熟」を主ります。" },
+        { id:37, sec:2, q:"胃から送られた飲食物を受け取り、清（水穀の精微）と濁（残渣）に分ける「清濁を分別する」腑はどれか。", opts:["胆", "胃", "小腸", "大腸", "膀胱"], ans:2, exp:"栄養（清）と不要物（濁）に分けるのは「小腸」の働きです。" },
+        { id:38, sec:2, q:"気や水液がめぐる通路であり、「決瀆の官（けっとくのかん）」と呼ばれる腑はどれか。", opts:["胆", "胃", "小腸", "大腸", "三焦"], ans:4, exp:"水液の通路となるのは「三焦（さんしょう）」です。" },
+        { id:39, sec:2, q:"気の作用のうち、血液や津液を押し動かし、成長や発育を促す働きはどれか。", opts:["推動作用", "温煦作用", "防衛作用", "固摂作用", "気化作用"], ans:0, exp:"押し動かす働きを「推動（すいどう）作用」といいます。" },
+        { id:40, sec:2, q:"気の作用のうち、汗、尿、血液などが体外に無断で漏れ出すのを防ぐ働きはどれか。", opts:["推動作用", "温煦作用", "防衛作用", "固摂作用", "営養作用"], ans:3, exp:"漏出を防ぎ、定位置に保つ働きを「固摂（こせつ）作用」といいます。（超頻出）" },
+        { id:41, sec:2, q:"気の作用のうち、精を気に、津液を汗や尿に変化させる働きはどれか。", opts:["推動作用", "温煦作用", "防衛作用", "固摂作用", "気化作用"], ans:4, exp:"物質を別の形に変化させる働きを「気化作用」といいます。" },
+        { id:42, sec:2, q:"先天の精を起源とし、生命力の源となる最も重要かつ基本的な気はどれか。", opts:["元気", "宗気", "営気", "衛気", "臓腑の気"], ans:0, exp:"もっとも重要で根本的な気は「元気（真気・原気）」です。" },
+        { id:43, sec:2, q:"呼吸によって吸入された清気と、水穀の精微が胸中で結合して作られ、心と肺の働きを助ける気はどれか。", opts:["元気", "宗気", "営気", "衛気", "経絡の気"], ans:1, exp:"胸中に存在し、呼吸や心拍を推動するのは「宗気（そうき）」です。" },
+        { id:44, sec:2, q:"脈中を流れ、血とともに全身を栄養する気はどれか。", opts:["元気", "宗気", "営気", "衛気", "経絡の気"], ans:2, exp:"脈の中を流れ、栄養を与える気は「営気（えいき）」です。" },
+        { id:45, sec:2, q:"脈外（体表）をめぐり、外邪の侵入を防ぐとともに、汗孔の開合を調節する気はどれか。", opts:["元気", "宗気", "営気", "衛気", "経絡の気"], ans:3, exp:"体表をガードし、防衛作用が強い気は「衛気（えき）」です。" },
+        { id:46, sec:2, q:"「血」の生成に関わる臓腑の正しい組み合わせはどれか。", opts:["肝・心", "脾・腎", "肺・胃", "肝・腎", "肺・脾"], ans:1, exp:"血の生成には、水穀の精微（脾）と、精血同源による精（腎）が関わるため「脾・腎」が正解です。" },
+        { id:47, sec:2, q:"血の働きについての記述で正しいものはどれか。", opts:["精神活動とは無関係である。", "気の推動作用がなくても自ら流れる。", "神志（精神活動）の物質的基礎である。", "皮膚を乾燥させる働きがある。", "津液の働きを抑制する。"], ans:2, exp:"血が充実していると精神が安定するため、血は「神志の物質的基礎」と呼ばれます。" },
+        { id:48, sec:2, q:"体内に存在する正常な水液の総称である「津液」の生成におもに関わる臓腑はどれか。", opts:["肝", "心", "脾", "肺", "腎"], ans:2, exp:"津液は飲食物から作られるため、消化吸収を主る「脾」が生成の中心となります。" },
+        { id:49, sec:2, q:"津液の運行・代謝に関わる臓腑の正しい組み合わせはどれか。", opts:["脾・肺・腎・三焦など", "心・肝・脾・胃など", "肺・心・胆・膀胱など", "肝・胆・小腸・大腸など", "脾・胃・心包・三焦など"], ans:0, exp:"津液の代謝には、脾（運化）、肺（通調水道）、腎（気化）、三焦（通路）、膀胱などが連携して関わります。" },
+        { id:50, sec:2, q:"父母から受け継いだ「先天の精」と、飲食物からつくられた「後天の精」があり、人体の成長・発育の根本となる物質はどれか。", opts:["気", "血", "津液", "衛気", "精"], ans:4, exp:"成長、発育、生殖の根本となる物質は「精（せい）」です。" }
+    ];
+
+    let currentQuestions = [];
+    let currentIndex = 0;
+    let score = 0;
+    let answeredCount = 0;
+    let isFinished = false;
+
+    window.onload = () => {
+        if (/Android|iPhone/i.test(navigator.userAgent)) applyLayout('mobile');
+        else applyLayout('pc');
+        setMode('all');
+        
+        // キーボードショートカット (Space または 右矢印で次へ)
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.code === 'Space') {
+                e.preventDefault();
+                if(currentQuestions[currentIndex]?.userAnswered || isFinished) {
+                    nextQuestion();
+                }
+            }
+        });
+    };
+
+    function applyLayout(type) {
+        if (type === 'mobile') {
+            document.body.className = 'mobile-layout';
+            document.getElementById('mobile-fixed-nav').classList.remove('hidden');
+            document.querySelectorAll('.pc-only-btns').forEach(el => el.classList.add('hidden'));
+        } else {
+            document.body.className = 'pc-layout';
+            document.getElementById('mobile-fixed-nav').classList.add('hidden');
+            document.querySelectorAll('.pc-only-btns').forEach(el => el.classList.remove('hidden'));
+        }
+    }
+
+    function toggleLayout() {
+        if (document.body.className === 'pc-layout') applyLayout('mobile');
+        else applyLayout('pc');
+    }
+
+    function setMode(mode) {
+        document.querySelectorAll('.tab').forEach(t => {
+            t.classList.toggle('active', t.dataset.mode === mode);
+        });
+
+        let filteredData = [];
+        if (mode === 'sec1') filteredData = data.filter(d => d.sec === 1);
+        else if (mode === 'sec2') filteredData = data.filter(d => d.sec === 2);
+        else filteredData = [...data];
+
+        // 問題の順番をランダムシャッフル
+        filteredData.sort(() => 0.5 - Math.random());
+
+        currentQuestions = filteredData.map(q => ({
+            ...q,
+            userAnswered: false,
+            userChoice: null
+        }));
+
+        currentIndex = 0;
+        score = 0;
+        answeredCount = 0;
+        isFinished = false;
+        render();
+    }
+
+    function render() {
+        // 進捗バーとテキスト
+        const progress = ((currentIndex + 1) / currentQuestions.length) * 100;
+        document.getElementById('progress-bar').style.width = `${progress}%`;
+        document.getElementById('progress-text').innerText = `${currentIndex + 1} / ${currentQuestions.length}`;
+        
+        const acc = answeredCount === 0 ? 0 : Math.round((score / answeredCount) * 100);
+        document.getElementById('accuracy-text').innerText = `正解率: ${acc}%`;
+
+        const qArea = document.getElementById('question-area');
+        const optionsDiv = document.getElementById('options');
+        const expDiv = document.getElementById('explanation-area');
+
+        // テスト終了時
+        if (isFinished) {
+            qArea.innerHTML = `<div class="result-screen">
+                <div>テスト終了！お疲れ様でした。</div>
+                <div class="result-score">正解率: ${acc}%</div>
+                <div style="font-size:1rem; opacity:0.8">上のタブをクリックして再テストできます。</div>
+            </div>`;
+            optionsDiv.innerHTML = '';
+            expDiv.classList.remove('show');
+            return;
+        }
+
+        const q = currentQuestions[currentIndex];
+        qArea.innerHTML = `<div id="question-content">${q.q}</div>`;
+
+        // 選択肢の描画
+        optionsDiv.innerHTML = '';
+        const labels = ['A', 'B', 'C', 'D', 'E'];
+        
+        q.opts.forEach((optText, index) => {
+            const div = document.createElement('div');
+            div.className = 'option-item';
+            div.innerHTML = `<span class="opt-label">${labels[index]}.</span> ${optText}`;
+            
+            if (q.userAnswered) {
+                if (index === q.ans) {
+                    div.classList.add('correct');
+                } else if (index === q.userChoice) {
+                    div.classList.add('wrong');
+                }
+                // 選ばれなかった不正解の選択肢は少し薄くする
+                if (index !== q.ans && index !== q.userChoice) {
+                    div.style.opacity = '0.5';
+                }
+            } else {
+                div.onclick = () => checkAnswer(index);
+            }
+            optionsDiv.appendChild(div);
+        });
+
+        // 解説の描画
+        if (q.userAnswered) {
+            expDiv.innerHTML = `<strong>【解説】</strong><br>${q.exp}`;
+            expDiv.classList.add('show');
+        } else {
+            expDiv.classList.remove('show');
+        }
+    }
+
+    function checkAnswer(selectedIndex) {
+        const q = currentQuestions[currentIndex];
+        if (q.userAnswered) return; // 二重回答防止
+
+        q.userAnswered = true;
+        q.userChoice = selectedIndex;
+        answeredCount++;
+        
+        if (selectedIndex === q.ans) score++;
+        render();
+    }
+
+    function nextQuestion() {
+        if (isFinished) return;
+        
+        // 未回答の場合はアラートを出すか、スキップさせるか（今回はスキップ不可にする）
+        if (!currentQuestions[currentIndex].userAnswered) {
+            alert("解答を選択してください。");
+            return;
+        }
+
+        if (currentIndex < currentQuestions.length - 1) {
+            currentIndex++;
+            render();
+        } else {
+            isFinished = true;
+            render();
+        }
+    }
+
+    function prevQuestion() {
+        if (currentIndex > 0) {
+            isFinished = false;
+            currentIndex--;
+            render();
+        }
+    }
+</script>
+</body>
+</html>

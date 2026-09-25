@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>中医学の治療学</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #3498db;
+            --success-color: #27ae60;
+            --error-color: #e74c3c;
+            --bg-color: #f4f7f6;
+            --text-color: #2c3e50;
+        }
+
+        body {
+            font-family: "Hiragino Sans", "Meiryo", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- 顶部状态栏 --- */
+        。top-bar {
+            background: #fff;
+            padding: 12px 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 100;
+            position: relative;
+        }
+        .progress-container {
+            width: 100%;
+            height: 4px;
+            background: #eee;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        #progress-bar {
+            height: 100%;
+            background: var(--accent-color);
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .status-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        .top-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        .top-link {
+            font-size: 1rem;
+            color: var(--accent-color);
+            cursor: pointer;
+            text-decoration: underline;
+            font-weight: bold;
+        }
+
+        /* --- 核心布局区域 --- */
+        #main-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        /* PC模式 */
+        .pc-layout #main-container { flex-direction: row; }
+        .pc-layout .content-left {
+            flex: 6;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            border-right: 2px solid #eee;
+            background: #fdfdfd;
+        }
+        .pc-layout .options-right {
+            flex: 4;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-color);
+        }
+
+        /* 手机模式 */
+        .mobile-layout #main-container { flex-direction: column; overflow-y: auto; }
+        .mobile-layout .content-left, 
+        .mobile-layout .options-right {
+            flex: none; width: 100%; padding: 15px; box-sizing: border-box;
+        }
+
+        /* --- 模式选择标签 --- */
+        .mode-tabs {
+            display: flex;
+            gap: 2px;
+            margin-bottom: 15px;
+        }
+        .tab {
+            flex: 1;
+            padding: 12px 5px;
+            text-align: center;
+            background: #e0e0e0;
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 8px 8px 0 0;
+            font-size: 1rem;
+        }
+        .tab.active { background: var(--accent-color); color: white; }
+        
+        .mobile-layout .mode-tabs {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 5px;
+        }
+        .mobile-layout .tab { border-radius: 5px; }
+
+        /* --- 题目显示 --- */
+        .question-box {
+            background: #2c3e50;
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            min-height: 180px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            font-size: 1.6rem;
+            line-height: 1.6;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .mobile-layout .question-box { font-size: 1.3rem; padding: 20px; min-height: 120px; }
+
+        /* --- 结果显示 --- */
+        .result-screen {
+            text-align: center;
+            padding: 20px;
+        }
+        .result-score { font-size: 3rem; color: var(--accent-color); margin: 10px 0; }
+
+        /* --- 选项列表 --- */
+        .options-list { display: flex; flex-direction: column; gap: 12px; }
+        .option-item {
+            background: white;
+            border: 2px solid #ddd;
+            padding: 18px;
+            border-radius: 10px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: left;
+        }
+        .option-item.correct { background: var(--success-color) !important; color: white; border-color: #1e7e34; }
+        .option-item.wrong { background: var(--error-color) !important; color: white; border-color: #bd2130; }
+
+        /* --- 并排按钮布局 (1行3列) --- */
+        .button-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .btn {
+            padding: 15px 5px;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            background: #6c757d;
+            color: white;
+            text-align: center;
+        }
+        .btn-next { background: var(--accent-color); }
+        .btn-all { background: #f39c12; }
+
+        /* --- 手机端固定底栏 --- */
+        .mobile-layout .fixed-nav {
+            position: fixed;
+            bottom: 0; left: 0; width: 100%;
+            background: white;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            padding: 10px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            box-sizing: border-box;
+            gap: 8px;
+        }
+        .mobile-layout #main-container { padding-bottom: 80px; }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body class="pc-layout">
+
+    <div class="top-bar">
+        <div class="progress-container"><div id="progress-bar"></div></div>
+        <div class="status-info">
+            <div>進捗: <span id="progress-text">1 / 5</span></div>
+            <div id="accuracy-text">正解率: 0%</div>
+            <div class="top-controls">
+                <span class="top-link" onclick="toggleLayout()">切替</span>
+                <span class="top-link" onclick="location.reload()">最初から</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-container">
+        <!-- 内容区 -->
+        <div class="content-left">
+            <div class="mode-tabs">
+                <div class="tab active" data-mode="pathology" onclick="setMode('pathology')">病因・病態</div>
+                <div class="tab" data-mode="policy" onclick="setMode('policy')">治療方針</div>
+                <div class="tab" data-mode="drugs" onclick="setMode('drugs')">使用薬物</div>
+                <div class="tab" data-mode="formula" onclick="setMode('formula')">代表処方</div>
+            </div>
+            
+            <div class="question-box" id="question-area">
+                <div id="question-content">正在加载...</div>
+            </div>
+
+            <!-- PC端按钮：一行三列 -->
+            <div class="button-row pc-only-btns">
+                <button class="btn" onclick="prevQuestion()">前へ</button>
+                <button class="btn btn-all" onclick="testAll()">すべてテスト</button>
+                <button class="btn btn-next" onclick="nextQuestion()">次へ</button>
+            </div>
+            <p id="shortcut-hint" style="margin-top:10px; font-size:0.9rem; color:#999;" class="pc-only-btns">提示：支持使用 [方向键→] 或 [空格] 切换次へ</p>
+        </div>
+
+        <!-- 选项区 -->
+        <div class="options-right">
+            <div class="options-list" id="options">
+                <!-- 选项内容 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 手机端固定底栏 -->
+    <div id="mobile-fixed-nav" class="fixed-nav hidden">
+        <button class="btn btn-all" onclick="testAll()">すべてテスト</button>
+        <button class="btn" onclick="prevQuestion()">前へ</button>
+        <button class="btn btn-next" onclick="nextQuestion()">次へ</button>
+    </div>
+
+<script>
+    const data = [
+        { id: 1, name: "心気虚", pathology: "心気の不足により発症する。臨床上、心陽虚を伴っていることが多い。", policy: "補益心気（心陽虚を伴う場合は温通心陽の法を加える）", drugs: "人参・炙甘草（心気を補う）、竜眼肉・麦門冬（心陰を補い心気を益す）。心陽虚を伴う場合は桂枝・附子（温通心陽）を用いる。", formula: "炙甘草湯、参附湯加味方など" },
+        { id: 2, name: "肺気虚", pathology: "肺の陽気の虚衰によって出現し、宣発粛降の失調と皮毛の機能の失調を伴ったもの。", policy: "補益肺気", drugs: "人参・黄耆・炙甘草・西洋参（肺気を補う）、五味子（肺気を収斂する）など", formula: "生脈散、補肺湯など（衛表不固を伴えば玉屏風散を併用）" },
+        { id: 3, name: "肺陰虚", pathology: "肺の陰液の耗損によって出現し、虚熱の症状を伴うもの。", policy: "養陰潤肺・止咳化痰", drugs: "百合・麦門冬・天門冬・沙参・生地黄など（肺陰を養う）＋止咳化痰薬", formula: "百合固金湯など" },
+        { id: 4, name: "痰湿阻肺", pathology: "脾の運化と肺の通調水道の機能の障害によって痰湿を生じ、肺の宣発粛降が失調して咳や痰を来したもの。", policy: "燥湿化痰・止咳", drugs: "半夏（燥湿化痰薬の主薬）、陳皮・茯苓・蒼朮・厚朴など", formula: "二陳湯加味など" },
+        { id: 5, name: "燥邪犯肺", pathology: "肺が燥邪を感受して肺衛が犯され、肺系の乾燥・傷津を来したもの。", policy: "清肺潤肺", drugs: "桑葉・梨皮・川貝母・牛蒡子・栝楼根・沙参・芦根・茅根などの辛涼解表薬に滋陰薬を加えて用いる。", formula: "桑杏湯など" },
+        { id: 6, name: "脾気虚", pathology: "脾気が不足し、昇清運化に障害を来したもの。", policy: "健脾益気", drugs: "人参・黄耆・炙甘草・白朮など（胃気不和を伴えば陳皮・縮砂などを配合する）", formula: "四君子湯（基本処方）" },
+        { id: 7, name: "中気下陥", pathology: "脾気虚のために昇挙が無力となって中気（脾胃の気）が下陥したもの。", policy: "健脾益気・昇陽挙陥", drugs: "健脾益気薬 ＋ 柴胡・升麻（昇提薬）", formula: "補中益気湯、昇陥湯など" },
+        { id: 8, name: "脾不統血", pathology: "脾気虚のために脾の統血能力が低下したもの。", policy: "益気統血", drugs: "人参・黄耆・炙甘草などの健脾益気薬を基本に用いる。", formula: "帰脾湯など" },
+        { id: 9, name: "湿邪困脾", pathology: "飲食の不摂生や高湿度の場所への長期滞在で陽気が消耗されて内湿が生じ、外界の湿邪の影響も相俟って運化が障害されたもの。", policy: "燥湿健脾", drugs: "厚朴・蒼朮などの芳香化湿薬、陳皮などの理気燥湿薬", formula: "平胃散（主方）" },
+        { id: 10, name: "肝気鬱結", pathology: "肝の疏泄機能の失調により、気機が鬱滞したもの。", policy: "疏肝理気", drugs: "柴胡・鬱金・青皮・枳殻・香附子・川楝子・延胡索など", formula: "柴胡疏肝散、四逆散、逍遥散など" },
+        { id: 11, name: "肝火上炎", pathology: "気鬱化火したり、情志の激しい変動や辛辣のものを過食したりして肝火が生じたもの。", policy: "清泄肝火（原因を取り除きつつ肝火を清泄する）", drugs: "竜胆草・山梔子・黄芩・桑葉・菊花など", formula: "竜胆瀉肝湯" },
+        { id: 12, name: "肝陽上亢", pathology: "肝陰虚によって肝陽が相対的に亢進したもの。", policy: "滋陰・平肝潜陽", drugs: "生地黄・枸杞子・鼈甲・天門冬・麦門冬（滋陰薬）＋釣藤鈎・天麻・白蒺藜・白芍・羚羊角（平肝薬）＋牡蛎・石決明・真珠母（潜陽薬）", formula: "天麻釣藤飲、一貫煎など" },
+        { id: 13, name: "肝経湿熱", pathology: "外来の湿熱を感受したり、内湿が化熱して肝経に滞留して発症したもの。", policy: "清泄肝経湿熱", drugs: "茵蔯蒿・柴胡・鬱金・枳実・黄芩・黄柏・山梔子・大黄・竜胆草など", formula: "竜胆瀉肝湯、茵蔯蒿湯など" },
+        { id: 14, name: "腎陽虚", pathology: "腎の陽気（命門の火）の不足によって発症するもの。", policy: "温補腎陽", drugs: "附子・肉桂・補骨脂・益智仁・仙茅・淫羊藿などの補陽薬", formula: "右帰丸、真武湯、八味地黄丸など" },
+        { id: 15, name: "腎陰虚", pathology: "腎陰の不足によって発症するもの。", policy: "滋腎養阴", drugs: "地黄・亀板・天門冬・鼈甲・玄参・何首烏・山茱萸・女貞子・旱蓮草などの補阴薬", formula: "左帰丸、大補陰丸、六味地黄丸など" },
+        { id: 16, name: "腎精不足", pathology: "先天的に腎に蔵する精が少なかったり、房室不节や長期にわたる疾病により腎精を耗損して発症するもの。", policy: "填補腎精", drugs: "血肉有情：鹿茸・亀板・杜仲・枸杞子・肉蓯蓉・巴戟天・鎖陽・山茱萸・菟絲子・熟地黄・紫河車など", formula: "左帰丸、右帰丸、河車大造丸など" },
+        { id: 17, name: "心腎不交", pathology: "心火と腎水の依存関係の失調。", policy: "滋腎陰・清心火", drugs: "无", formula: "黄連阿膠湯、清心蓮子飲、朱砂安神丸、交泰丸など" },
+        { id: 18, name: "心脾両虚", pathology: "脾気虚に心血虚を兼ねたもの。", policy: "補益心脾", drugs: "无", formula: "帰脾湯など" },
+        { id: 19, name: "脾腎陽虚", pathology: "脾と腎の陽気が傷られて発症したもの。", policy: "温補脾腎", drugs: "无", formula: "附子理中湯など" },
+        { id: 20, name: "肺腎陰虚", pathology: "長期にわたる咳嗽などで肺陰が消耗されて腎陰をも巻き込んだり、房室不节などの原因で腎陰が耗傷して肺陰を巻き込んだりして発症したもの。", policy: "滋腎潤肺", drugs: "无", formula: "百合固金湯など" },
+        { id: 21, name: "肝脾不調 (肝脾不和)", pathology: "肝の疏泄失調が脾の機能を障害したもの。", policy: "疏肝健脾（鬱結した肝気が脾の運化機能を障害したものは「抑肝扶脾」とする）", drugs: "无", formula: "柴胡疏肝散、逍遥散加味方など（抑肝扶脾には痛瀉要方など）" }
+    ];
+
+    let currentQuestions = [];
+    let currentIndex = 0;
+    let score = 0;
+    let answeredCount = 0;
+    let currentMode = 'pathology';
+    let isTestAllMode = false;
+    let isFinished = false;
+
+    window.onload = () => {
+        if (/Android|iPhone/i.test(navigator.userAgent)) applyLayout('mobile');
+        else applyLayout('pc');
+        initQuiz(5);
+        
+        // 快捷键绑定
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.code === 'Space') {
+                e.preventDefault();
+                nextQuestion();
+            }
+        });
+    };
+
+    function applyLayout(type) {
+        if (type === 'mobile') {
+            document.body.className = 'mobile-layout';
+            document.getElementById('mobile-fixed-nav').classList.remove('hidden');
+            document.querySelectorAll('.pc-only-btns').forEach(el => el.classList.add('hidden'));
+        } else {
+            document.body.className = 'pc-layout';
+            document.getElementById('mobile-fixed-nav').classList.add('hidden');
+            document.querySelectorAll('.pc-only-btns').forEach(el => el.classList.remove('hidden'));
+        }
+    }
+
+    function toggleLayout() {
+        if (document.body.className === 'pc-layout') applyLayout('mobile');
+        else applyLayout('pc');
+    }
+
+    function initQuiz(count) {
+        isTestAllMode = (count === 21);
+        isFinished = false;
+        let shuffled = [...data].sort(() => 0.5 - Math.random());
+        currentQuestions = shuffled.slice(0, count).map(q => ({
+            ...q,
+            userAnswered: false,
+            userChoice: null,
+            options: generateOptions(q.name)
+        }));
+        currentIndex = 0; score = 0; answeredCount = 0;
+        render();
+    }
+
+    function generateOptions(correctName) {
+        let names = data.map(d => d.name).filter(n => n !== correctName);
+        let selected = names.sort(() => 0.5 - Math.random()).slice(0, 3);
+        selected.push(correctName);
+        return selected.sort(() => 0.5 - Math.random());
+    }
+
+    function render() {
+        const q = currentQuestions[currentIndex];
+        
+        // 进度与状态
+        const progress = ((currentIndex + 1) / currentQuestions.length) * 100;
+        document.getElementById('progress-bar').style.width = `${progress}%`;
+        document.getElementById('progress-text').innerText = `${currentIndex + 1} / ${currentQuestions.length}`;
+        const acc = answeredCount === 0 ? 0 : Math.round((score / answeredCount) * 100);
+        document.getElementById('accuracy-text').innerText = `正解率: ${acc}%`;
+
+        // 题目显示
+        const qArea = document.getElementById('question-area');
+        if (isFinished) {
+            qArea.innerHTML = `<div class="result-screen">
+                <div>本次测试完成！</div>
+                <div class="result-score">${acc}%</div>
+                <div style="font-size:1rem; opacity:0.8">按下 [→] 或 [すべてテスト] 重新练习</div>
+            </div>`;
+            document.getElementById('options').innerHTML = '';
+            return;
+        }
+
+        qArea.innerHTML = `<div id="question-content">${q[currentMode]}</div>`;
+
+        // 选项渲染
+        const optionsDiv = document.getElementById('options');
+        optionsDiv.innerHTML = '';
+        q.options.forEach(opt => {
+            const div = document.createElement('div');
+            div.className = 'option-item';
+            div.innerText = opt;
+            if (q.userAnswered) {
+                if (opt === q.name) div.classList.add('correct');
+                else if (opt === q.userChoice) div.classList.add('wrong');
+            } else {
+                div.onclick = () => checkAnswer(opt);
+            }
+            optionsDiv.appendChild(div);
+        });
+    }
+
+    function setMode(mode) {
+        currentMode = mode;
+        document.querySelectorAll('.tab').forEach(t => {
+            t.classList.toggle('active', t.dataset.mode === mode);
+        });
+        if (!isFinished) render();
+    }
+
+    function checkAnswer(choice) {
+        const q = currentQuestions[currentIndex];
+        q.userAnswered = true;
+        q.userChoice = choice;
+        answeredCount++;
+        if (choice === q.name) score++;
+        render();
+    }
+
+    function nextQuestion() {
+        if (isFinished) {
+            isTestAllMode ? testAll() : initQuiz(5);
+            return;
+        }
+        if (currentIndex < currentQuestions.length - 1) {
+            currentIndex++;
+            render();
+        } else {
+            isFinished = true;
+            render();
+        }
+    }
+
+    function prevQuestion() {
+        if (currentIndex > 0) {
+            isFinished = false;
+            currentIndex--;
+            render();
+        }
+    }
+
+    function testAll() {
+        initQuiz(21);
+    }
+</script>
+</body>
+            </html>
